@@ -38,5 +38,5 @@ Volumes: `claude-home` (`/home/claude`: Login, History, Git-Config) und `workspa
 ## Sicherheit
 
 - Kein Docker-Socket, kein `privileged`, Non-Root-User `claude`.
-- Die Permissions erlauben Datei-Edits und Standard-Git. Alles andere muss bestätigt werden, auch vom Handy. Force-Push und das Lesen der Credentials sind verboten.
+- Die Session läuft im **Auto Mode**: Ein Klassifikator prüft jede Aktion. Sichere Schritte laufen ohne Rückfrage, riskante werden blockiert. Die Umgebungsbeschreibung dafür steht in `config/settings.json` (`autoMode.environment`). Force-Push und das Lesen der Credentials sind zusätzlich hart verboten.
 - ttyd ist nur mit Basic Auth erreichbar und an die LAN-IP gebunden. Leite den Port nicht im Router weiter.
