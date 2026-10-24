@@ -30,6 +30,7 @@ Volumes: `claude-home` (`/home/claude`: Login, History, Git-Config) und `workspa
 ## Betrieb
 
 - **Update von Claude Code:** Der Auto-Updater ist im Container aus. Die Action baut das Image wöchentlich neu. Danach holst du das neue Image mit `make deploy`. Portainer ist nur im LAN erreichbar, deshalb kann die GitHub Action nicht selbst redeployen.
+- **Copy & Scroll im Web-Terminal:** Die tmux-Maus ist aus, damit der Browser normal markieren und kopieren kann. Den Verlauf scrollst du mit `Ctrl-b [` und Pfeiltasten oder Bild-auf/ab, mit `q` geht es zurück.
 - **Session neu starten:** Im Web-Terminal `Ctrl-C`, nach 5 s startet sie neu. Alternativ startest du den Container neu.
 - **Re-Login:** `docker exec -it claude-raspi rm ~/.claude/.credentials.json`, dann Container neu starten und Schritt 3 wiederholen.
 - **Git/GitHub:** `GH_TOKENS="FabianHardt=<pat> fabi4711=<pat>"` enthält fine-grained PATs pro Account. Der erste Eintrag ist der Default. Git (HTTPS) wählt den Token über `git-credential-ghtokens` anhand des Repo-Owners. Fremde Owner wie Orgs bekommen den Default. `gh` ist mit allen Accounts eingeloggt, der Default ist aktiv. Wechseln geht mit `gh auth switch -u <account>`. Die Commit-Identität kommt aus `GIT_USER_NAME`/`GIT_USER_EMAIL`.
