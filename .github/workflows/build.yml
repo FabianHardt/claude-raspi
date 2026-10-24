@@ -7,11 +7,11 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    # weekly rebuild picks up new Claude Code releases (auto-updater is disabled in the container)
-    - cron: "0 4 * * 1"
+    # weekly uncached rebuild picks up Debian security updates
+    - cron: "0 1 * * 1"
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -40,12 +40,37 @@ jobs:
             type=sha
             type=ref,event=tag
 
-      - uses: docker/build-push-action@v6
+      - id: build
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          no-cache: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Portainer polls the deploy branch; it only moves once the image exists, so there is no race with the build.
+      - name: Publish deploy branch
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          OWNER: ${{ github.repository_owner }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          image="ghcr.io/${OWNER,,}/claude-raspi@${DIGEST}"
+          sed -E "s|^( *image:) .*claude-raspi.*$|\1 ${image}|" docker-compose.yml > "$RUNNER_TEMP/docker-compose.yml"
+          grep -q "@sha256:" "$RUNNER_TEMP/docker-compose.yml"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch --depth=1 origin +refs/heads/deploy:refs/remotes/origin/deploy; then
+            git switch -c deploy origin/deploy
+          else
+            git switch --orphan deploy
+          fi
+          cp "$RUNNER_TEMP/docker-compose.yml" docker-compose.yml
+          git add docker-compose.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "Deploy ${image} (${GITHUB_SHA::7})"
+          git push origin deploy

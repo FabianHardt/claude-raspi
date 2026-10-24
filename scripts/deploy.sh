@@ -38,7 +38,8 @@ done
 
 STACK_NAME="${STACK_NAME:-claude-raspi}"
 REPO_URL="${REPO_URL:-https://github.com/FabianHardt/claude-raspi}"
-REPO_REF="${REPO_REF:-refs/heads/main}"
+REPO_REF="${REPO_REF:-refs/heads/deploy}"
+POLL_INTERVAL="${POLL_INTERVAL:-5m}"
 PORTAINER_URL="${PORTAINER_URL%/}"
 
 STACK_ENV_KEYS=(
@@ -74,11 +75,17 @@ STACK_ID=$(api GET /stacks | jq -r --arg n "$STACK_NAME" --argjson e "$PORTAINER
 if [ -z "$STACK_ID" ]; then
   echo "→ Stack '$STACK_NAME' anlegen aus $REPO_URL ($REPO_REF)"
   PAYLOAD=$(jq -n --arg name "$STACK_NAME" --arg url "$REPO_URL" --arg ref "$REPO_REF" \
-    --argjson env "$ENV_JSON" \
+    --arg poll "$POLL_INTERVAL" --argjson env "$ENV_JSON" \
     '{name:$name, repositoryURL:$url, repositoryReferenceName:$ref,
-      composeFile:"docker-compose.yml", repositoryAuthentication:false, env:$env}')
+      composeFile:"docker-compose.yml", repositoryAuthentication:false, env:$env,
+      autoUpdate:{interval:$poll}}')
   api POST "/stacks/create/standalone/repository?endpointId=$PORTAINER_ENDPOINT_ID" "$PAYLOAD" >/dev/null
 else
+  echo "→ Stack $STACK_ID: Git-Ref $REPO_REF, Polling alle $POLL_INTERVAL"
+  PAYLOAD=$(jq -n --arg ref "$REPO_REF" --arg poll "$POLL_INTERVAL" --argjson env "$ENV_JSON" \
+    '{repositoryReferenceName:$ref, repositoryAuthentication:false, env:$env, prune:false,
+      autoUpdate:{interval:$poll}}')
+  api POST "/stacks/$STACK_ID/git?endpointId=$PORTAINER_ENDPOINT_ID" "$PAYLOAD" >/dev/null
   echo "→ Stack $STACK_ID redeployen (git pull + image pull)"
   PAYLOAD=$(jq -n --arg ref "$REPO_REF" --argjson env "$ENV_JSON" \
     '{repositoryReferenceName:$ref, env:$env, prune:false, pullImage:true}')

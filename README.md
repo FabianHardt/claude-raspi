@@ -14,7 +14,8 @@ Eine dauerhaft laufende Claude-Code-Session auf dem Raspberry Pi 5, betrieben al
 | `session.sh` | Endlosschleife in tmux: `claude remote-control --continue` (dockt nach Neustarts wieder an), ohne Login `claude` |
 | `config/settings.json` | Permissions der Session; wird bei jedem Start nach `~/.claude/` kopiert |
 | `config/CLAUDE.md` | globale Instruktionen für die Session |
-| `scripts/deploy.sh`, `Makefile` | `make deploy`: legt den Portainer-Stack per API an oder aktualisiert ihn |
+| `scripts/deploy.sh`, `Makefile` | `make deploy`: legt den Portainer-Stack per API an (Git-Ref `deploy`, Polling) oder aktualisiert ihn |
+| `renovate.json` | Renovate: Versionen pinnen, Patch- und Digest-Updates automatisch mergen |
 | `.github/workflows/build.yml` | baut `ghcr.io/<owner>/claude-raspi` für linux/arm64 |
 
 Volumes: `claude-home` (`/home/claude`: Login, History, Git-Config) und `workspace` (`/workspace`: Repos).
@@ -29,7 +30,9 @@ Volumes: `claude-home` (`/home/claude`: Login, History, Git-Config) und `workspa
 
 ## Betrieb
 
-- **Update von Claude Code:** Der Auto-Updater ist im Container aus. Die Action baut das Image wöchentlich neu. Danach holst du das neue Image mit `make deploy`. Portainer ist nur im LAN erreichbar, deshalb kann die GitHub Action nicht selbst redeployen.
+- **Updates (Renovate):** Gepinnt sind Claude Code und ttyd (als `ARG` im Dockerfile), das Debian-Basisimage (per Digest) und die GitHub Actions (per SHA). Renovate prüft sie und wartet bei jeder neuen Version 3 Tage (`minimumReleaseAge`). Patch- und Digest-Updates mergt Renovate nachts zwischen 1 und 5 Uhr selbst. Minor- und Major-Updates kommen als PR, den du mergst. Zusätzlich baut die Action einmal pro Woche ohne Cache neu, damit Debian-Security-Updates reinkommen.
+- **Rollout:** Nach jedem Image-Build auf `main` schreibt die Action eine `docker-compose.yml` mit Image-Digest auf den Branch `deploy`. Portainer prüft `deploy` alle 5 Minuten und redeployt bei einer Änderung. Weil der Branch erst nach dem Image-Push weiterzieht, gibt es keine Race-Condition. Rollback: einen Commit auf `deploy` reverten. Ein Redeploy startet den Container neu und unterbricht dabei laufende Arbeit. Danach dockt `--continue` wieder an die Session an.
+- **Env ändern** (zum Beispiel Tokens): `deploy/.env.deploy` anpassen und `make deploy` ausführen.
 - **Copy & Scroll im Web-Terminal:** Die tmux-Maus ist aus, damit der Browser normal markieren und kopieren kann. Den Verlauf scrollst du mit `Ctrl-b [` und Pfeiltasten oder Bild-auf/ab, mit `q` geht es zurück.
 - **Session neu starten:** Im Web-Terminal `Ctrl-C`, nach 5 s startet sie neu. Alternativ startest du den Container neu.
 - **Re-Login:** `docker exec -it claude-raspi rm ~/.claude/.credentials.json`, dann Container neu starten und Schritt 3 wiederholen.
