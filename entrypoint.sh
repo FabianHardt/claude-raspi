@@ -17,8 +17,25 @@ fi
 if [[ -n "${GIT_USER_EMAIL:-}" ]]; then
     git config --global user.email "$GIT_USER_EMAIL"
 fi
-if [[ -n "${GH_TOKEN:-}" ]]; then
-    gh auth setup-git
+git config --global --unset-all credential.https://github.com.helper || true
+git config --global --add credential.https://github.com.helper ""
+git config --global --add credential.https://github.com.helper ghtokens
+git config --global credential.https://github.com.useHttpPath true
+
+# Re-login on every start so removed or rotated tokens don't linger in the home volume.
+rm -f "$HOME/.config/gh/hosts.yml"
+default_account=""
+for entry in ${GH_TOKENS:-}; do
+    [[ -n "${entry#*=}" ]] || continue
+    account="${entry%%=*}"
+    if printf '%s' "${entry#*=}" | gh auth login --hostname github.com --git-protocol https --with-token; then
+        default_account="${default_account:-$account}"
+    else
+        echo "gh login failed for $account" >&2
+    fi
+done
+if [[ -n "$default_account" ]]; then
+    gh auth switch --hostname github.com --user "$default_account" >/dev/null
 fi
 
 tmux new-session -d -s claude /usr/local/bin/session.sh

@@ -22,7 +22,7 @@ Volumes: `claude-home` (`/home/claude`: Login, History, Git-Config) und `workspa
 ## Einrichtung
 
 1. **Image:** Jeder Push auf `main` baut `ghcr.io/fabianhardt/claude-raspi:latest`. Das Package ist public, Portainer braucht also keine Registry-Credentials.
-2. **Konfiguration:** `cp deploy/.env.deploy.example deploy/.env.deploy` und die Werte ausfüllen: Portainer-Access-Token, `TTYD_CREDENTIAL`, `GH_TOKEN`. Die Datei ist gitignored.
+2. **Konfiguration:** `cp deploy/.env.deploy.example deploy/.env.deploy` und die Werte ausfüllen: Portainer-Access-Token, `TTYD_CREDENTIAL`, `GH_TOKENS`. Die Datei ist gitignored.
 3. **Deploy:** `make deploy`. Das Skript `scripts/deploy.sh` legt den Stack in Portainer über die API als Git-Stack aus diesem Repo an. Gibt es den Stack schon, macht es einen Git-Redeploy mit Image-Pull.
 4. **Erst-Login:** `http://192.168.2.98:7681` öffnen und dich mit `TTYD_CREDENTIAL` anmelden. In der Claude-Session `/login` ausführen und die angezeigte URL im Browser öffnen. Danach beendest du die Session mit `/exit`. Die Schleife startet dann automatisch `claude remote-control`.
 5. **Verbinden:** In claude.ai/code oder in der Claude-App taucht die Session „Raspberry Pi“ auf.
@@ -32,7 +32,7 @@ Volumes: `claude-home` (`/home/claude`: Login, History, Git-Config) und `workspa
 - **Update von Claude Code:** Der Auto-Updater ist im Container aus. Die Action baut das Image wöchentlich neu. Danach holst du das neue Image mit `make deploy`. Portainer ist nur im LAN erreichbar, deshalb kann die GitHub Action nicht selbst redeployen.
 - **Session neu starten:** Im Web-Terminal `Ctrl-C`, nach 5 s startet sie neu. Alternativ startest du den Container neu.
 - **Re-Login:** `docker exec -it claude-raspi rm ~/.claude/.credentials.json`, dann Container neu starten und Schritt 3 wiederholen.
-- **Git:** `GH_TOKEN` (fine-grained, nur die nötigen Repos) wird per `gh auth setup-git` für HTTPS genutzt. Die Commit-Identität kommt aus `GIT_USER_NAME`/`GIT_USER_EMAIL`.
+- **Git/GitHub:** `GH_TOKENS="FabianHardt=<pat> fabi4711=<pat>"` enthält fine-grained PATs pro Account. Der erste Eintrag ist der Default. Git (HTTPS) wählt den Token über `git-credential-ghtokens` anhand des Repo-Owners. Fremde Owner wie Orgs bekommen den Default. `gh` ist mit allen Accounts eingeloggt, der Default ist aktiv. Wechseln geht mit `gh auth switch -u <account>`. Die Commit-Identität kommt aus `GIT_USER_NAME`/`GIT_USER_EMAIL`.
 
 ## Sicherheit
 

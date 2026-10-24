@@ -34,7 +34,7 @@ RUN cp "$(readlink -f /home/claude/.local/bin/claude)" /usr/local/bin/claude \
 
 COPY tmux.conf /etc/tmux.conf
 COPY config/ /opt/claude-config/
-COPY --chmod=755 entrypoint.sh session.sh /usr/local/bin/
+COPY --chmod=755 entrypoint.sh session.sh git-credential-ghtokens /usr/local/bin/
 
 USER claude
 WORKDIR /workspace
