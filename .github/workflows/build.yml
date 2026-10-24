@@ -14,6 +14,11 @@ permissions:
   contents: write
   packages: write
 
+# Serialised so the deploy branch always ends on the newest image.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -48,6 +53,8 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Without attestations each build is a single package version, so the cleanup below can't orphan index children.
+          provenance: false
           no-cache: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -74,3 +81,11 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "Deploy ${image} (${GITHUB_SHA::7})"
           git push origin deploy
+
+      - name: Prune old images
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5.0.0
+        with:
+          package-name: claude-raspi
+          package-type: container
+          min-versions-to-keep: 20
