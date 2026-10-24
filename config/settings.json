@@ -4,7 +4,7 @@
     "DISABLE_AUTOUPDATER": "1"
   },
   "permissions": {
-    "defaultMode": "acceptEdits",
+    "defaultMode": "auto",
     "allow": [
       "Bash(git status:*)",
       "Bash(git diff:*)",
@@ -32,6 +32,18 @@
       "Read(~/.claude.json)",
       "Bash(git push --force:*)",
       "Bash(git push -f:*)"
+    ]
+  },
+  "autoMode": {
+    "allow": [
+      "$defaults"
+    ],
+    "environment": [
+      "**Host containment**: Claude Code runs in a non-root Docker container on a Raspberry Pi 5 in the user's home LAN; no Docker socket, no sudo. Only /workspace and $HOME persist.",
+      "**Primary use**: software development on the user's own GitHub repositories, steered remotely via Remote Control from the user's phone.",
+      "**Source control**: GitHub accounts FabianHardt and fabi4711 are the user's own; their repos are trusted. Pushing feature branches and opening PRs is routine; merging or pushing to a default branch needs explicit user approval.",
+      "**Trusted internal network**: 192.168.2.0/24 is the user's home LAN; 192.168.2.98 is the Docker host running Portainer and the user's own services.",
+      "**Secrets**: GH_TOKENS and TTYD_CREDENTIAL in the environment and ~/.claude/.credentials.json are credentials; never print, log or send them anywhere."
     ]
   }
 }
