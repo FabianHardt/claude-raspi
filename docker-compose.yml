@@ -1,0 +1,23 @@
+services:
+  claude:
+    image: ghcr.io/${GHCR_OWNER}/claude-raspi:${IMAGE_TAG:-latest}
+    container_name: claude-raspi
+    hostname: claude-raspi
+    restart: unless-stopped
+    mem_limit: 2g
+    ports:
+      - "${TTYD_BIND:-0.0.0.0}:7681:7681"
+    environment:
+      TTYD_CREDENTIAL: ${TTYD_CREDENTIAL:?TTYD_CREDENTIAL is required}
+      GH_TOKEN: ${GH_TOKEN:-}
+      GIT_USER_NAME: ${GIT_USER_NAME:-}
+      GIT_USER_EMAIL: ${GIT_USER_EMAIL:-}
+      RC_SESSION_NAME: ${RC_SESSION_NAME:-Raspberry Pi}
+      TZ: ${TZ:-Europe/Berlin}
+    volumes:
+      - claude-home:/home/claude
+      - workspace:/workspace
+
+volumes:
+  claude-home:
+  workspace:
