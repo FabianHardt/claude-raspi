@@ -7,6 +7,7 @@
 - Heimnetz-Dienste sind direkt per LAN-IP erreichbar; Zugangsdaten stehen nur in Umgebungsvariablen.
 
 ## Git
+- Zwei GitHub-Accounts: `FabianHardt` (Default) und `fabi4711`. Git über HTTPS wählt den Token automatisch nach Repo-Owner. Für `gh` auf ein Repo von `fabi4711` vorher `gh auth switch -u fabi4711` ausführen und danach zurückwechseln.
 - Nie direkt auf den Default-Branch committen, sondern einen Feature-Branch anlegen.
 - Kein Merge, Push oder Rebase in den Default-Branch ohne ausdrückliche Zustimmung.
 - Keine AI-Attribution (kein `Co-Authored-By: Claude`, kein „Generated with …“) in Commits oder PRs.
