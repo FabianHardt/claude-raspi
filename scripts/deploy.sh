@@ -97,12 +97,7 @@ else
     PAYLOAD=$(jq -n --arg ref "$REPO_REF" --argjson env "$ENV_JSON" \
       '{repositoryReferenceName:$ref, env:$env, prune:false, pullImage:true}')
     api PUT "/stacks/$STACK_ID/git/redeploy?endpointId=$PORTAINER_ENDPOINT_ID" "$PAYLOAD" >/dev/null
-    STATUS=$(api GET /gitops/workflows | jq -r --argjson id "$STACK_ID" \
-      '[.[].artifacts[] | select(.id == $id) | .files[].refStatus] | first // "unbekannt"')
-    if [ "$STATUS" != "healthy" ]; then
-      echo "⚠ GitOps-Workflow meldet refStatus '$STATUS', Polling greift evtl. nicht mehr." >&2
-      echo "  Abhilfe: Stack in Portainer löschen (Volumes bleiben) und 'make deploy' erneut ausführen." >&2
-    fi
+    echo "  Nach dem nächsten Poll prüfen: App Delivery → Workflows sollte 'Healthy' zeigen (README)."
   fi
 fi
 
