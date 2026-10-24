@@ -81,15 +81,24 @@ if [ -z "$STACK_ID" ]; then
       autoUpdate:{interval:$poll}}')
   api POST "/stacks/create/standalone/repository?endpointId=$PORTAINER_ENDPOINT_ID" "$PAYLOAD" >/dev/null
 else
+  CURRENT_ENV=$(api GET "/stacks/$STACK_ID" | jq -c '.Env // [] | map({name, value}) | sort_by(.name)')
   echo "→ Stack $STACK_ID: Git-Ref $REPO_REF, Polling alle $POLL_INTERVAL"
   PAYLOAD=$(jq -n --arg ref "$REPO_REF" --arg poll "$POLL_INTERVAL" --argjson env "$ENV_JSON" \
     '{repositoryReferenceName:$ref, repositoryAuthentication:false, env:$env, prune:false,
       autoUpdate:{interval:$poll}}')
   api POST "/stacks/$STACK_ID/git?endpointId=$PORTAINER_ENDPOINT_ID" "$PAYLOAD" >/dev/null
-  echo "→ Stack $STACK_ID redeployen (git pull + image pull)"
-  PAYLOAD=$(jq -n --arg ref "$REPO_REF" --argjson env "$ENV_JSON" \
-    '{repositoryReferenceName:$ref, env:$env, prune:false, pullImage:true}')
-  api PUT "/stacks/$STACK_ID/git/redeploy?endpointId=$PORTAINER_ENDPOINT_ID" "$PAYLOAD" >/dev/null
+
+  # A manual git redeploy can leave the Portainer 2.45 GitOps workflow stuck (portainer#13298),
+  # so only redeploy when the env changed; image updates arrive via polling.
+  if [ "$CURRENT_ENV" = "$(jq -c 'sort_by(.name)' <<<"$ENV_JSON")" ]; then
+    echo "→ Env unverändert, kein Redeploy (neue Images kommen per Polling)"
+  else
+    echo "→ Env geändert, Stack $STACK_ID redeployen"
+    PAYLOAD=$(jq -n --arg ref "$REPO_REF" --argjson env "$ENV_JSON" \
+      '{repositoryReferenceName:$ref, env:$env, prune:false, pullImage:true}')
+    api PUT "/stacks/$STACK_ID/git/redeploy?endpointId=$PORTAINER_ENDPOINT_ID" "$PAYLOAD" >/dev/null
+    echo "  Nach dem nächsten Poll prüfen: App Delivery → Workflows sollte 'Healthy' zeigen (README)."
+  fi
 fi
 
 echo "✓ Stack '$STACK_NAME' deployt. Web-Terminal: http://${TTYD_BIND:-<pi-ip>}:7681"
