@@ -31,7 +31,7 @@ ENV LANG=C.UTF-8 \
 
 # /home/claude is a volume at runtime, so the binary must live outside of it.
 # renovate: datasource=npm depName=@anthropic-ai/claude-code
-ARG CLAUDE_CODE_VERSION=2.1.310
+ARG CLAUDE_CODE_VERSION=2.1.311
 USER claude
 RUN curl -fsSL https://claude.ai/install.sh | bash -s "${CLAUDE_CODE_VERSION}"
 USER root
