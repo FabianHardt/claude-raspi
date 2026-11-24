@@ -1,6 +1,6 @@
 services:
   claude:
-    image: ghcr.io/fabianhardt/claude-raspi@sha256:593555c4e17224c5beba8577dae65c7bd3fecfd7a40aed80e20a8aa9fd23fa84
+    image: ghcr.io/fabianhardt/claude-raspi@sha256:d2eb7e5d92dc1988e53a6270ca511cc76f80038d91b6edd1d338c36344741702
     container_name: claude-raspi
     hostname: claude-raspi
     restart: unless-stopped
